@@ -32,5 +32,9 @@ class @Commands
 
 
   @createCommand = (command) ->
+    if (!command.commandName)
+      throw new Meteor.Error "Not a valid Command!"
+    if (!@commands[command.commandName])
+      throw new Meteor.Error "Command: "+ command.commandName + " is not Registered"
     _.extend(new @commands[command.commandName](), command)
 
