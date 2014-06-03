@@ -41,9 +41,7 @@
 if Meteor.isServer
 
   execute = (id, fields) ->
-
     handlers = EventHandlers.getEventHandlers fields.name
-
     _.each(handlers, (handler) ->
       try
         (new handler(fields.eventData)).execute()
@@ -53,9 +51,11 @@ if Meteor.isServer
         EventStore.update(id, {$set: {error: true, errorDetails: err}})
     )
 
+  findNotExecuted = () ->
+    EventStore.find({executed: false, error: false}, {limit: 10, sort: {executedAt: 1}}).observeChanges
+	  added: execute
+	  changed: (id, fields) ->
+	    if fields.executed
+		  execute id, fields
 
-  @EventStore.find({executed: false, error: false}, {limit: 1, sort: {executedAt: 1}}).observeChanges
-    added: execute
-    changed: (id, fields) ->
-      if fields.executed
-        execute id, fields
+  Meteor.setTimeout(findNotExecuted, 10000)
