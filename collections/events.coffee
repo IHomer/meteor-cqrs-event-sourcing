@@ -53,9 +53,9 @@ if Meteor.isServer
 
   findNotExecuted = () ->
     EventStore.find({executed: false, error: false}, {limit: 10, sort: {executedAt: 1}}).observeChanges
-	  added: execute
-	  changed: (id, fields) ->
-	    if fields.executed
-		  execute id, fields
+      added: execute
+      changed: (id, fields) ->
+        if fields.executed
+          execute id, fields
 
   Meteor.setTimeout(findNotExecuted, 10000)
