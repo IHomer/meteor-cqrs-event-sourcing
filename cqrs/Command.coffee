@@ -1,12 +1,11 @@
 class @Command
 
-  constructor: (@data) ->
+  constructor: (@data, @commandName) ->
     @user = ""
     if Meteor.isServer
       @user = this.userId
     else
       @user = Meteor.userId()
-    @commandName = @.constructor.name
 
   insertEvent: (name) ->
     EventStore.insert
