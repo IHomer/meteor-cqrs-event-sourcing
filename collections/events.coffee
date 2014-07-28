@@ -80,4 +80,4 @@ if Meteor.isServer
     catch error
       console.log 'retryError: ' + error
 
-  Meteor.setInterval(retryError, 1000)
+  Meteor.setTimeout(retryError, 10000)
