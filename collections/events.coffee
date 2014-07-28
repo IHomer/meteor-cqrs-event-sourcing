@@ -75,8 +75,9 @@ if Meteor.isServer
   retryError = () ->
     try
       events = EventStore.find({executed: false, error: true, retryCount: { $lt: 5}}, {limit: 10, sort: {retryCount: 1, executedAt: 1}}).fetch()
-	  _.each events, (event) ->
-		execute(event._id, event)
+      _.each(events, (event) ->
+        execute(event._id, event)
+      )
     catch error
       console.log 'retryError: ' + error
 
