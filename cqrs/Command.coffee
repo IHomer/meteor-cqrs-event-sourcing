@@ -8,12 +8,13 @@ class @Command
       @user = Meteor.userId()
 
   insertEvent: (name) ->
+    data = Commands.removeDotInKeys @data
     EventStore.insert
       executedAt: new Date
       name: name
-      eventData: @data
+      eventData: data
       executed: false
-
+	  
 
 # static part
 class @Commands
