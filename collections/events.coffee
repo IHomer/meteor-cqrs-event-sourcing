@@ -50,7 +50,8 @@ if Meteor.isServer
     handlers = EventHandlers.getEventHandlers fields.name
     _.each(handlers, (handler) ->
       try
-        (new handler(fields.eventData)).execute()
+        data = Commands.addDotInKeys fields.eventData
+        (new handler(data)).execute()
         EventStore.update(id, $set: {executed: true})
       catch error
         console.log error
