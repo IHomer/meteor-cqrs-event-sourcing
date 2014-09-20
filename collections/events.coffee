@@ -1,32 +1,4 @@
-@EventStore = new Meteor.Collection 'events',
-  schema: new SimpleSchema(
-    executedAt:
-      type: Date,
-      label: 'Created At'
-
-    name:
-      type: String,
-      label: 'Event Name'
-
-    eventData:
-      type: Object
-      blackbox: true
-      label: 'Event data'
-
-    executed:
-      type: Boolean,
-      label: 'Already executed'
-    error:
-      type: Boolean,
-      label: 'Execution resulted in an error'
-      default: false
-    errorDetails:
-      type: Object
-      label: 'Execution error details'
-      blackbox: true
-      optional: true
-
-  )
+@EventStore = new Meteor.Collection 'events'
 @EventStore.allow(
   insert: (userId, doc) ->
     false
