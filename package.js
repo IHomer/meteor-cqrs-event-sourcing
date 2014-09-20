@@ -6,6 +6,7 @@ Package.on_use(function (api) {
     api.use('underscore', 'client');
     api.use('coffeescript', ['client', 'server']);
 
+    api.use('mongo', ['client', 'server']);
    api.add_files('collections/events.coffee', ['client', 'server']);
    api.add_files('cqrs/Command.coffee', ['client', 'server']);
    api.add_files('cqrs/EventHandler.coffee', ['client', 'server']);
