@@ -14,6 +14,8 @@ class @Command
       name: name
       eventData: data
       executed: false
+      error: false
+      retryCount: 0
 	  
 
 # static part
