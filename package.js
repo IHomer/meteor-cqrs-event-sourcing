@@ -5,6 +5,8 @@ Package.describe({
 Package.on_use(function (api) {
     api.use('underscore', 'client');
     api.use('coffeescript', ['client', 'server']);
+    api.use('collection2', ['client', 'server']);
+    api.imply && api.imply('collection2', ['client', 'server']);
 
 
    api.add_files('collections/events.coffee', ['client', 'server']);
