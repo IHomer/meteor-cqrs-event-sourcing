@@ -1,5 +1,11 @@
 Meteor.methods(
   executeCommand: (command) ->
-    c = Commands.createCommand(command)
-    c.execute()
+    @unblock()
+    if command.commandName?
+      c = Commands.createCommand(command)
+      c.execute()
+    else
+      _.each command, (it) ->
+        c = Commands.createCommand(it)
+        c.execute()
 )
