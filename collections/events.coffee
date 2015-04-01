@@ -30,10 +30,9 @@ if Meteor.isServer
     try
       EventStore.find({executed: false, error: false}, {limit: 10, sort: {executedAt: 1}}).observeChanges
         added: execute
-        changed: execute
     catch error
       console.log 'findNotExecuted: ' + error
-      findNotExecuted
+      findNotExecuted()
 
   Meteor.setTimeout(findNotExecuted, 10000)
 
@@ -41,7 +40,7 @@ if Meteor.isServer
     try
       events = EventStore.find({executed: false, error: true, retryCount: { $lt: 5}}, {limit: 10, sort: {retryCount: 1, executedAt: 1}}).fetch()
       _.each(events, (event) ->
-        execute(event._id, event)
+        EventStore.update(event._id, {$set: {error: false}})
       )
     catch error
       console.log 'retryError: ' + error
