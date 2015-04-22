@@ -1,4 +1,4 @@
-@EventStore = new Meteor.Collection 'events'
+@EventStore = new Meteor.Collection Meteor.settings?.cqrs?.eventStore || "events"
 @EventStore.allow(
   insert: (userId, doc) ->
     false
@@ -34,8 +34,6 @@ if Meteor.isServer
       console.log 'findNotExecuted: ' + error
       findNotExecuted()
 
-  Meteor.setTimeout(findNotExecuted, 10000)
-
   retryError = () ->
     try
       events = EventStore.find({executed: false, error: true, retryCount: { $lt: 5}}, {limit: 10, sort: {retryCount: 1, executedAt: 1}}).fetch()
@@ -45,4 +43,6 @@ if Meteor.isServer
     catch error
       console.log 'retryError: ' + error
 
-  Meteor.setInterval(retryError, 1000)
+  Meteor.startup ->
+    Meteor.setTimeout(findNotExecuted, 1000)
+    Meteor.setInterval(retryError, 1000)
