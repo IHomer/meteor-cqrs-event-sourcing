@@ -11,19 +11,18 @@ class @Command
     data = @data
     dataDB = EJSON.clone data
     dataDB = Commands.removeDotInKeys dataDB
-    id = EventStoreBackup.insert
-      executedAt: new Date
+    id = EventStore.insert
+      createdAt: new Date
+      command: @commandName
       name: name
       eventData: dataDB
-      executed: false
-      error: false
-      retryCount: 0
+      eventHandlers: []
     handlers = EventHandlers.getEventHandlers name
     _.each(handlers, (handler) ->
       try
         dataClone = EJSON.clone data
         (new handler(dataClone)).execute()
-        EventStoreBackup.update(id, $set: {executed: true}, $push: {eventHandlers: {name: handler.prototype.constructor.name, executedAt: new Date()}})
+        EventStore.update(id, $push: {eventHandlers: {name: handler.prototype.constructor.name, executedAt: new Date()}})
       catch error
         fields =
           executedAt: new Date
@@ -31,11 +30,12 @@ class @Command
           message: error
           name: name
           eventData: dataDB
+          eventId: id
           executed: false
           error: true
           retryCount: 0
         console.log fields
-        EventStore.insert(fields)
+        EventErrorStore.insert(fields)
     )
 
 # static part

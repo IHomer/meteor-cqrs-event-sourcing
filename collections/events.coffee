@@ -1,5 +1,5 @@
-@EventStoreBackup = new Meteor.Collection Meteor.settings?.cqrs?.eventStoreBackup || "eventsBackup"
-@EventStoreBackup.allow(
+@EventStore = new Meteor.Collection Meteor.settings?.cqrs?.eventStore || "events"
+@EventStore.allow(
   insert: (userId, doc) ->
     false
   update: (userId, doc, fields, modifier) ->
@@ -8,8 +8,8 @@
     false
 )
 
-@EventStore = new Meteor.Collection Meteor.settings?.cqrs?.eventStore || "events"
-@EventStore.allow(
+@EventErrorStore = new Meteor.Collection Meteor.settings?.cqrs?.eventErrorStore || "eventErrors"
+@EventErrorStore.allow(
   insert: (userId, doc) ->
     false
   update: (userId, doc, fields, modifier) ->
@@ -26,18 +26,18 @@ if Meteor.isServer
       try
         data = Commands.addDotInKeys fields.eventData
         (new handler(data)).execute()
-        EventStoreBackup.update(id, $set: {executed: true}, $push: {eventHandlers: {name: handler.prototype.constructor.name, executedAt: new Date(), replyCount: fields.retryCount+1}})
-        EventStore.remove id
+        EventStore.update(fields.eventId, $push: {eventHandlers: {name: handler.prototype.constructor.name, executedAt: new Date(), error: fields.message, retryCount: fields.retryCount+1}})
+        EventErrorStore.remove id
       catch error
         fields.error = error
         console.log fields
-        EventStore.update(id, {$set: {error: true, message: error, executedAt: new Date}, $inc: {retryCount: 1}})
+        EventErrorStore.update(id, {$set: {error: true, message: error, executedAt: new Date}, $inc: {retryCount: 1}})
     else
       console.log handler + ' NOT FOUND TO EXECUTE'
 
   findNotExecuted = () ->
     try
-      EventStore.find({executed: false, error: false}, {limit: 10, sort: {executedAt: 1}}).observeChanges
+      EventErrorStore.find({executed: false, error: false}, {limit: 10, sort: {executedAt: 1}}).observeChanges
         added: executeHandler
     catch error
       console.log 'findNotExecuted: ' + error
@@ -45,9 +45,9 @@ if Meteor.isServer
 
   retryError = () ->
     try
-      events = EventStore.find({executed: false, error: true, retryCount: { $lt: 5}}, {limit: 10, sort: {retryCount: 1, executedAt: 1}}).fetch()
+      events = EventErrorStore.find({executed: false, error: true, retryCount: { $lt: 5}}, {limit: 10, sort: {retryCount: 1, executedAt: 1}}).fetch()
       _.each(events, (event) ->
-        EventStore.update(event._id, {$set: {error: false}})
+        EventErrorStore.update(event._id, {$set: {error: false}})
       )
     catch error
       console.log 'retryError: ' + error
