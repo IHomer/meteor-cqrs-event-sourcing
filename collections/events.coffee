@@ -1,3 +1,13 @@
+@EventStoreBackup = new Meteor.Collection Meteor.settings?.cqrs?.eventStoreBackup || "eventsBackup"
+@EventStoreBackup.allow(
+  insert: (userId, doc) ->
+    false
+  update: (userId, doc, fields, modifier) ->
+    false
+  remove: (userId, doc) ->
+    false
+)
+
 @EventStore = new Meteor.Collection Meteor.settings?.cqrs?.eventStore || "events"
 @EventStore.allow(
   insert: (userId, doc) ->
@@ -10,29 +20,28 @@
 
 if Meteor.isServer
 
-  execute = (id, fields) ->
-    handlers = EventHandlers.getEventHandlers fields.name
-    _.each(handlers, (handler) ->
+  executeHandler = (id, fields) ->
+    handler = EventHandlers.getEventHandlerByName fields.name, fields.handler
+    if handler
       try
         data = Commands.addDotInKeys fields.eventData
         (new handler(data)).execute()
-        EventStore.update(id, $set: {executed: true})
+        EventStoreBackup.update(id, $set: {executed: true}, $push: {eventHandlers: {name: handler.prototype.constructor.name, executedAt: new Date(), replyCount: fields.retryCount+1}})
+        EventStore.remove id
       catch error
-        console.log error
-        err = {}
-        err.handler = handler.eventName
-        err.message = error
-        #errorString = JSON.parse JSON.stringify err
-        EventStore.update(id, {$set: {error: true, errorDetails: err}, $inc: {retryCount: 1}})
-    )
+        fields.error = error
+        console.log fields
+        EventStore.update(id, {$set: {error: true, message: error, executedAt: new Date}, $inc: {retryCount: 1}})
+    else
+      console.log handler + ' NOT FOUND TO EXECUTE'
 
   findNotExecuted = () ->
     try
       EventStore.find({executed: false, error: false}, {limit: 10, sort: {executedAt: 1}}).observeChanges
-        added: execute
+        added: executeHandler
     catch error
       console.log 'findNotExecuted: ' + error
-      findNotExecuted()
+      throw error
 
   retryError = () ->
     try
@@ -44,5 +53,5 @@ if Meteor.isServer
       console.log 'retryError: ' + error
 
   Meteor.startup ->
-    Meteor.setTimeout(findNotExecuted, 1000)
-    Meteor.setInterval(retryError, 1000)
+    Meteor.setTimeout(findNotExecuted, 10000)
+    Meteor.setInterval(retryError, 5000)

@@ -8,15 +8,35 @@ class @Command
       @user = Meteor.userId()
 
   insertEvent: (name) ->
-    data = Commands.removeDotInKeys @data
-    EventStore.insert
+    data = @data
+    dataDB = EJSON.clone data
+    dataDB = Commands.removeDotInKeys dataDB
+    id = EventStoreBackup.insert
       executedAt: new Date
       name: name
-      eventData: data
+      eventData: dataDB
       executed: false
       error: false
       retryCount: 0
-	  
+    handlers = EventHandlers.getEventHandlers name
+    _.each(handlers, (handler) ->
+      try
+        dataClone = EJSON.clone data
+        (new handler(dataClone)).execute()
+        EventStoreBackup.update(id, $set: {executed: true}, $push: {eventHandlers: {name: handler.prototype.constructor.name, executedAt: new Date()}})
+      catch error
+        fields =
+          executedAt: new Date
+          handler: handler.prototype.constructor.name
+          message: error
+          name: name
+          eventData: dataDB
+          executed: false
+          error: true
+          retryCount: 0
+        console.log fields
+        EventStore.insert(fields)
+    )
 
 # static part
 class @Commands

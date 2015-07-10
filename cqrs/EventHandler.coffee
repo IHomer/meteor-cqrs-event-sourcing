@@ -26,4 +26,7 @@ class @EventHandlers
   @getEventHandlers: (commandName) ->
     @eventHandlers[commandName] or []
 
+  @getEventHandlerByName: (commandName, handlerName) ->
+    handlers = @eventHandlers[commandName] or []
+    _.find handlers, (h) -> h.prototype.constructor.name is handlerName
 
