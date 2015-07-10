@@ -31,7 +31,7 @@ if Meteor.isServer
       catch error
         fields.error = error
         console.log fields
-        EventErrorStore.update(id, {$set: {error: true, message: error, executedAt: new Date}, $inc: {retryCount: 1}})
+        EventErrorStore.update(id, {$set: {error: true, message: error, executedAt: new Date()}, $inc: {retryCount: 1}})
     else
       console.log handler + ' NOT FOUND TO EXECUTE'
 
